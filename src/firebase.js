@@ -35,9 +35,6 @@ export async function signInWithName(name) {
   if (!trimmed) throw new Error("Please enter a name");
 
   const cred = await signInAnonymously(auth);
-
-  // store name on auth profile (easy reuse)
-  await updateProfile(cred.user, { displayName: trimmed });
   return cred.user;
 }
 
@@ -111,7 +108,7 @@ export async function joinRoom(code) {
   if (!tx.committed) throw new Error("Room full (max 5 players)");
 
   await update(ref(db, `rooms/${code}/players/${user.uid}`), {
-    name: user.displayName || "Player",
+    name: name.trim() || "Player",
     joinedAt: serverTimestamp(),
     finished: false,
     totalTimeMs: null,
