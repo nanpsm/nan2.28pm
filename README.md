@@ -62,11 +62,6 @@ npm install
 npm start
 ```
 
-## Open in browser
-  http://localhost: . . .
-
-⚠️ Camera features require HTTPS or localhost.
-
 ## Camera Permissions
 - Allow camera access when prompted
 - Camera preview appears in the bottom corner
