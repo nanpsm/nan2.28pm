@@ -29,26 +29,100 @@ const TOTAL_ROUNDS_DEFAULT = 20;
 const MIRROR = true;
 
 const GESTURE_TARGETS = [
-  { type: "GESTURE", display: "🤚", label: "LEFT PALM", gesture: "OPEN_PALM", hand: "Left" },
-  { type: "GESTURE", display: "✋", label: "RIGHT PALM", gesture: "OPEN_PALM", hand: "Right" },
+  {
+    type: "GESTURE",
+    display: "🤚",
+    label: "LEFT PALM",
+    gesture: "OPEN_PALM",
+    hand: "Left",
+  },
+  {
+    type: "GESTURE",
+    display: "✋",
+    label: "RIGHT PALM",
+    gesture: "OPEN_PALM",
+    hand: "Right",
+  },
 
-  { type: "GESTURE", display: "✊", label: "LEFT FIST", gesture: "FIST", hand: "Left" },
-  { type: "GESTURE", display: "✊", label: "RIGHT FIST", gesture: "FIST", hand: "Right" },
+  {
+    type: "GESTURE",
+    display: "✊",
+    label: "LEFT FIST",
+    gesture: "FIST",
+    hand: "Left",
+  },
+  {
+    type: "GESTURE",
+    display: "✊",
+    label: "RIGHT FIST",
+    gesture: "FIST",
+    hand: "Right",
+  },
 
-  { type: "GESTURE", display: "✌️", label: "LEFT PEACE", gesture: "PEACE", hand: "Left" },
-  { type: "GESTURE", display: "✌️", label: "RIGHT PEACE", gesture: "PEACE", hand: "Right" },
+  {
+    type: "GESTURE",
+    display: "✌️",
+    label: "LEFT PEACE",
+    gesture: "PEACE",
+    hand: "Left",
+  },
+  {
+    type: "GESTURE",
+    display: "✌️",
+    label: "RIGHT PEACE",
+    gesture: "PEACE",
+    hand: "Right",
+  },
 
-  { type: "GESTURE", display: "👍", label: "LEFT THUMBS UP", gesture: "THUMBS_UP", hand: "Left" },
-  { type: "GESTURE", display: "👍", label: "RIGHT THUMBS UP", gesture: "THUMBS_UP", hand: "Right" },
+  {
+    type: "GESTURE",
+    display: "👍",
+    label: "LEFT THUMBS UP",
+    gesture: "THUMBS_UP",
+    hand: "Left",
+  },
+  {
+    type: "GESTURE",
+    display: "👍",
+    label: "RIGHT THUMBS UP",
+    gesture: "THUMBS_UP",
+    hand: "Right",
+  },
 
   { type: "GESTURE", display: "🤘", label: "ROCK ON", gesture: "ROCKER" },
 
-  { type: "GESTURE", display: "🤘🤘", label: "BOTH HAND ROCK ON", gesture: "ROCKER", bothHands: true },
-  { type: "GESTURE", display: "✊✊", label: "BOTH HAND FIST", gesture: "FIST", bothHands: true },
-  { type: "GESTURE", display: "✌️✌️", label: "BOTH HAND PEACE", gesture: "PEACE", bothHands: true },
+  {
+    type: "GESTURE",
+    display: "🤘🤘",
+    label: "BOTH HAND ROCK ON",
+    gesture: "ROCKER",
+    bothHands: true,
+  },
+  {
+    type: "GESTURE",
+    display: "✊✊",
+    label: "BOTH HAND FIST",
+    gesture: "FIST",
+    bothHands: true,
+  },
+  {
+    type: "GESTURE",
+    display: "✌️✌️",
+    label: "BOTH HAND PEACE",
+    gesture: "PEACE",
+    bothHands: true,
+  },
 ];
 
-const EXCLUDED_KEYS = ["Meta", "Control", "Alt", "Shift", "Escape", "CapsLock", "Tab"];
+const EXCLUDED_KEYS = [
+  "Meta",
+  "Control",
+  "Alt",
+  "Shift",
+  "Escape",
+  "CapsLock",
+  "Tab",
+];
 function isAllowedKey(key) {
   if (EXCLUDED_KEYS.includes(key)) return false;
   if (typeof key === "string" && key.startsWith("F")) return false;
@@ -61,14 +135,14 @@ function formatMs(ms) {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   const msLeft = total % 1000;
-  return `${m}:${String(s).padStart(2, "0")}.${String(msLeft).padStart(3, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}.${String(msLeft).padStart(2, "0")}`;
 }
 
 // ---------- Deterministic RNG for TEAM mode (same targets for everyone) ----------
 function mulberry32(seed) {
   let t = seed >>> 0;
   return function () {
-    t += 0x6D2B79F5;
+    t += 0x6d2b79f5;
     let x = Math.imul(t ^ (t >>> 15), 1 | t);
     x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
     return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
@@ -120,7 +194,8 @@ async function signInWithName(name) {
 function makeRoomCode(len = 6) {
   const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
   let out = "";
-  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < len; i++)
+    out += chars[Math.floor(Math.random() * chars.length)];
   return out;
 }
 
@@ -156,8 +231,8 @@ async function createRoom(roundCount = TOTAL_ROUNDS_DEFAULT) {
       },
     });
 
-  onDisconnect(ref(db, `rooms/${code}/players/${uid}`)).remove();
-  onDisconnect(ref(db, `rooms/${code}/results/${uid}`)).remove();
+    onDisconnect(ref(db, `rooms/${code}/players/${uid}`)).remove();
+    onDisconnect(ref(db, `rooms/${code}/results/${uid}`)).remove();
 
     return code;
   }
@@ -236,7 +311,7 @@ function listenRoom(code, cb) {
 // -------------------- APP --------------------
 export default function App() {
   useEffect(() => {
-  setPersistence(auth, inMemoryPersistence).catch(console.error);
+    setPersistence(auth, inMemoryPersistence).catch(console.error);
   }, []);
 
   // Screens: "name" | "mode" | "teamChoice" | "join" | "lobby" | "game" | "results"
@@ -261,7 +336,9 @@ export default function App() {
 
   const [ready, setReady] = useState(false);
   const [round, setRound] = useState(1);
-  const [target, setTarget] = useState(() => pickTargetForRound({ seed: 123, roundIndex: 1 })); // will reset properly
+  const [target, setTarget] = useState(() =>
+    pickTargetForRound({ seed: 123, roundIndex: 1 }),
+  ); // will reset properly
   const [finished, setFinished] = useState(false);
 
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
@@ -272,7 +349,7 @@ export default function App() {
   const startedRef = useRef(false);
   const lastRoomStatusRef = useRef(null);
   const startedAtRef = useRef(null); // prevents reset on every update
-  const [timeText, setTimeText] = useState("0:00.000");
+  const [timeText, setTimeText] = useState("0:00.00");
 
   // Avoid stale state inside handlers
   const targetRef = useRef(target);
@@ -305,7 +382,8 @@ export default function App() {
     // (use Math.random but still reuse deterministic functions for simplicity)
     const rng = () => Math.random();
     const r = rng();
-    if (r < 0.34) return GESTURE_TARGETS[Math.floor(rng() * GESTURE_TARGETS.length)];
+    if (r < 0.34)
+      return GESTURE_TARGETS[Math.floor(rng() * GESTURE_TARGETS.length)];
     if (r < 0.67) return generateKeyTargetFromRng(rng);
     return { type: "MOUSE", display: "🎯", label: "CLICK THE TARGET" };
   }
@@ -385,7 +463,8 @@ export default function App() {
   useEffect(() => {
     let raf = 0;
     const tick = () => {
-      if (!finishedRef.current && startedRef.current) setTimeText(formatMs(getDisplayedMs()));
+      if (!finishedRef.current && startedRef.current)
+        setTimeText(formatMs(getDisplayedMs()));
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -418,7 +497,8 @@ export default function App() {
     if (!videoRef.current) return;
 
     const hands = new Hands({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+      locateFile: (file) =>
+        `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
     });
 
     hands.setOptions({
@@ -452,7 +532,8 @@ export default function App() {
 
       const handsSeen = landmarks.map((lm, i) => {
         const rawHand = handedness?.[i]?.label || null;
-        const seenHand = rawHand && MIRROR ? (rawHand === "Left" ? "Right" : "Left") : rawHand;
+        const seenHand =
+          rawHand && MIRROR ? (rawHand === "Left" ? "Right" : "Left") : rawHand;
         const gesture = classifyGesture(lm);
         return { seenHand, gesture };
       });
@@ -461,7 +542,8 @@ export default function App() {
 
       if (t.bothHands) {
         const valid = handsSeen.filter((h) => h.gesture);
-        matched = valid.length === 2 && valid.every((h) => h.gesture === t.gesture);
+        matched =
+          valid.length === 2 && valid.every((h) => h.gesture === t.gesture);
       } else {
         matched = handsSeen.some((h) => {
           if (!h.gesture) return false;
@@ -492,8 +574,12 @@ export default function App() {
     setReady(true);
 
     return () => {
-      try { cameraRef.current?.stop(); } catch {}
-      try { hands.close(); } catch {}
+      try {
+        cameraRef.current?.stop();
+      } catch {}
+      try {
+        hands.close();
+      } catch {}
     };
   }, [screen]);
 
@@ -520,10 +606,12 @@ export default function App() {
         setRoundSeed(data.roundSeed);
         setTotalRounds(data.roundCount || TOTAL_ROUNDS_DEFAULT);
 
-        resetGame({ seed: data.roundSeed, rounds: data.roundCount || TOTAL_ROUNDS_DEFAULT });
+        resetGame({
+          seed: data.roundSeed,
+          rounds: data.roundCount || TOTAL_ROUNDS_DEFAULT,
+        });
         setScreen("game");
       }
-
     });
   }
 
@@ -539,11 +627,17 @@ export default function App() {
     setTotalRounds(rounds);
     setRound(1);
 
-    const next = seed != null ? pickTargetForRound({ seed, roundIndex: 1 }) : getNextTarget(1);
+    const next =
+      seed != null
+        ? pickTargetForRound({ seed, roundIndex: 1 })
+        : getNextTarget(1);
     setTarget(next);
-    if (next.type === "MOUSE") setMousePos(seed != null ? getMousePosForTarget(1) : getMousePosForTarget(1));
+    if (next.type === "MOUSE")
+      setMousePos(
+        seed != null ? getMousePosForTarget(1) : getMousePosForTarget(1),
+      );
 
-    setTimeText("0:00.000");
+    setTimeText("0:00.00");
     startedRef.current = false;
     totalMsRef.current = 0;
     roundStartRef.current = 0;
@@ -635,21 +729,21 @@ export default function App() {
   // ----- Screens -----
   if (screen === "name") {
     return (
-      <div className="minScreen" style={{ padding: 18 }}>
-        <h2>Oops Too Slow</h2>
-        <p>Enter your name (that’s all you need):</p>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Your name"
-          style={{ padding: 10, fontSize: 16, width: 260 }}
-        />
-        <div style={{ height: 10 }} />
-        <button className="hudBtn" onClick={handleNameContinue}>
-          Continue
-        </button>
-        <div style={{ marginTop: 12, opacity: 0.7, fontSize: 12 }}>
-          You’ll be signed in anonymously (no email/password).
+      <div className="minScreen nameScreen">
+        <div className="nameCard">
+          <h2>Oops Too Slow</h2>
+
+          <div className="nameRow">
+            <input
+              className="nameInput"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your nickname"
+            />
+            <button className="enterBtn" onClick={handleNameContinue}>
+              Enter
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -661,8 +755,12 @@ export default function App() {
         <h2>Hi, {authUser?.displayName || name || "Player"} 👋</h2>
         <p>Choose a mode:</p>
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="hudBtn" onClick={goSolo}>Solo Mode</button>
-          <button className="hudBtn" onClick={goTeam}>Team Mode</button>
+          <button className="hudBtn" onClick={goSolo}>
+            Solo Mode
+          </button>
+          <button className="hudBtn" onClick={goTeam}>
+            Team Mode
+          </button>
         </div>
       </div>
     );
@@ -673,9 +771,15 @@ export default function App() {
       <div className="minScreen" style={{ padding: 18 }}>
         <h2>Team Mode</h2>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button className="hudBtn" onClick={handleHostCreate}>Host Game</button>
-          <button className="hudBtn" onClick={() => setScreen("join")}>Join Party</button>
-          <button className="hudBtn" onClick={handleBackHome}>Back</button>
+          <button className="hudBtn" onClick={handleHostCreate}>
+            Host Game
+          </button>
+          <button className="hudBtn" onClick={() => setScreen("join")}>
+            Join Party
+          </button>
+          <button className="hudBtn" onClick={handleBackHome}>
+            Back
+          </button>
         </div>
         <p style={{ marginTop: 12, opacity: 0.8 }}>
           Party limit: <b>5 players</b>
@@ -692,12 +796,21 @@ export default function App() {
           value={joinCode}
           onChange={(e) => setJoinCode(e.target.value)}
           placeholder="Room code (e.g. AB12CD)"
-          style={{ padding: 10, fontSize: 16, width: 260, textTransform: "uppercase" }}
+          style={{
+            padding: 10,
+            fontSize: 16,
+            width: 260,
+            textTransform: "uppercase",
+          }}
         />
         <div style={{ height: 10 }} />
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="hudBtn" onClick={handleJoin}>Join</button>
-          <button className="hudBtn" onClick={() => setScreen("teamChoice")}>Back</button>
+          <button className="hudBtn" onClick={handleJoin}>
+            Join
+          </button>
+          <button className="hudBtn" onClick={() => setScreen("teamChoice")}>
+            Back
+          </button>
         </div>
       </div>
     );
@@ -705,7 +818,8 @@ export default function App() {
 
   if (screen === "lobby") {
     const players = roomData?.players ? Object.values(roomData.players) : [];
-    const isHost = roomData?.hostUid && auth.currentUser?.uid === roomData.hostUid;
+    const isHost =
+      roomData?.hostUid && auth.currentUser?.uid === roomData.hostUid;
 
     return (
       <div className="minScreen" style={{ padding: 18 }}>
@@ -718,11 +832,16 @@ export default function App() {
         </div>
         <ul>
           {players.map((p, i) => (
-            <li key={i}>{p.name}{p.finished ? " ✅" : ""}</li>
+            <li key={i}>
+              {p.name}
+              {p.finished ? " ✅" : ""}
+            </li>
           ))}
         </ul>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+        <div
+          style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}
+        >
           {isHost ? (
             <button className="hudBtn" onClick={handleHostStart}>
               Start Game
@@ -730,7 +849,9 @@ export default function App() {
           ) : (
             <div style={{ opacity: 0.8 }}>Waiting for host to start…</div>
           )}
-          <button className="hudBtn" onClick={handleBackHome}>Leave</button>
+          <button className="hudBtn" onClick={handleBackHome}>
+            Leave
+          </button>
         </div>
       </div>
     );
@@ -768,7 +889,9 @@ export default function App() {
           </>
         )}
 
-        <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+        <div
+          style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}
+        >
           <button
             className="hudBtn"
             onClick={() => {
@@ -784,7 +907,9 @@ export default function App() {
           >
             {mode === "team" ? "Back to Lobby" : "Play Again"}
           </button>
-          <button className="hudBtn" onClick={handleBackHome}>Home</button>
+          <button className="hudBtn" onClick={handleBackHome}>
+            Home
+          </button>
         </div>
       </div>
     );
@@ -807,18 +932,31 @@ export default function App() {
   return (
     <div className="minScreen">
       <div className="hud">
-        <div>{ready ? "CAM ON" : "CAM..."}</div>
-        <div>
-          {mode === "team" ? (
-            <>ROOM: <b>{roomCode}</b> | </>
-          ) : null}
-          ROUND: <b>{round}/{TOTAL_ROUNDS}</b> | TIME: <b>{timeText}</b>
+        {/* CENTER */}
+        <div className="hudLeft">
+          ROUND:{" "}
+          <b>
+            {round}/{TOTAL_ROUNDS}
+          </b>
         </div>
-        <button className="hudBtn" onClick={reset}>Reset</button>
+        <div className="hudCenter">
+          <b>{timeText}</b>
+        </div>
+
+        {/* RIGHT */}
+        <button className="hudBtn" onClick={reset}>
+          Home
+        </button>
       </div>
 
       {/* input only (hidden) */}
-      <video ref={videoRef} className="hiddenVideo" autoPlay playsInline muted />
+      <video
+        ref={videoRef}
+        className="hiddenVideo"
+        autoPlay
+        playsInline
+        muted
+      />
 
       <div className="centerWrap">
         {(target.type === "KEY" || target.type === "GESTURE") && (
@@ -848,7 +986,8 @@ export default function App() {
 function classifyGesture(lm) {
   if (!lm) return null;
 
-  const fingerExtended = (mcp, pip, tip) => lm[tip].y < lm[pip].y && lm[pip].y < lm[mcp].y;
+  const fingerExtended = (mcp, pip, tip) =>
+    lm[tip].y < lm[pip].y && lm[pip].y < lm[mcp].y;
   const fingerCurled = (pip, tip) => lm[tip].y > lm[pip].y;
 
   const indexExt = fingerExtended(5, 6, 8);
@@ -861,17 +1000,28 @@ function classifyGesture(lm) {
   const ringCurl = fingerCurled(14, 16);
   const pinkyCurl = fingerCurled(18, 20);
 
-  const extendedCount = [indexExt, middleExt, ringExt, pinkyExt].filter(Boolean).length;
+  const extendedCount = [indexExt, middleExt, ringExt, pinkyExt].filter(
+    Boolean,
+  ).length;
 
   const thumbUp = lm[4].y < lm[3].y && lm[3].y < lm[2].y;
   const thumbAboveWrist = lm[4].y < lm[0].y;
 
   if (extendedCount === 4) return "OPEN_PALM";
   if (indexExt && middleExt && !ringExt && !pinkyExt) return "PEACE";
-  if (thumbUp && thumbAboveWrist && indexCurl && middleCurl && ringCurl && pinkyCurl) return "THUMBS_UP";
+  if (
+    thumbUp &&
+    thumbAboveWrist &&
+    indexCurl &&
+    middleCurl &&
+    ringCurl &&
+    pinkyCurl
+  )
+    return "THUMBS_UP";
   if (extendedCount === 0 && !thumbUp) return "FIST";
 
-  if (indexExt && !middleExt && !ringExt && pinkyExt && middleCurl && ringCurl) return "ROCKER";
+  if (indexExt && !middleExt && !ringExt && pinkyExt && middleCurl && ringCurl)
+    return "ROCKER";
 
   return null;
 }
