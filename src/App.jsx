@@ -889,16 +889,20 @@ export default function App() {
 
   if (screen === "mode") {
     return (
-      <div className="minScreen whiteScreen" style={{ padding: 18, position: "relative" }}>
-        <h2>Hi, {name || "Player"} 👋</h2>
-        <p>Choose a mode:</p>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button className="hudBtn" onClick={goSolo}>
-            Solo Mode
-          </button>
-          <button className="hudBtn" onClick={goTeam}>
-            Team Mode
-          </button>
+      <div
+        className="minScreen whiteScreen"
+        style={{ padding: 18, position: "relative" }}
+      >
+        <div className="centerWrapScreen">
+          <div className="containerBox">
+            <h2>Hi, {name || "Player"} 👋</h2>
+            <button className="hudBtn" onClick={goSolo}>
+              SOLO
+            </button>
+            <button className="hudBtn" onClick={goTeam}>
+              MULTIPLAYER
+            </button>
+          </div>
         </div>
         <button
           onClick={() => setShowSettings((v) => !v)}
@@ -908,7 +912,7 @@ export default function App() {
             right: 12,
             border: "none",
             background: "transparent",
-            fontSize: 20,
+            fontSize: 30,
             cursor: "pointer",
           }}
           aria-label="Settings"
@@ -955,21 +959,23 @@ export default function App() {
   if (screen === "teamChoice") {
     return (
       <div className="minScreen whiteScreen" style={{ padding: 18 }}>
-        <h2>Team Mode</h2>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button className="hudBtn" onClick={handleHostCreate}>
-            Host Game
-          </button>
-          <button className="hudBtn" onClick={() => setScreen("join")}>
-            Join Party
-          </button>
-          <button className="hudBtn" onClick={handleBackHome}>
-            Back
-          </button>
+        <div className="centerWrapScreen">
+          <div className="containerBox">
+            <h2>Party</h2>
+            <button className="hudBtn" onClick={handleHostCreate}>
+              HOST
+            </button>
+            <button className="hudBtn" onClick={() => setScreen("join")}>
+              JOIN
+            </button>
+            <button className="hudBtn" onClick={handleBackHome}>
+              HOME
+            </button>
+            <p style={{ marginTop: 12, opacity: 0.8 }}>
+              Party limit: <b>5 players</b>
+            </p>
+          </div>
         </div>
-        <p style={{ marginTop: 12, opacity: 0.8 }}>
-          Party limit: <b>5 players</b>
-        </p>
       </div>
     );
   }
@@ -977,26 +983,27 @@ export default function App() {
   if (screen === "join") {
     return (
       <div className="minScreen whiteScreen" style={{ padding: 18 }}>
-        <h2>Join Party</h2>
-        <input
-          value={joinCode}
-          onChange={(e) => setJoinCode(e.target.value)}
-          placeholder="Room code (e.g. AB12CD)"
-          style={{
-            padding: 10,
-            fontSize: 16,
-            width: 260,
-            textTransform: "uppercase",
-          }}
-        />
-        <div style={{ height: 10 }} />
-        <div style={{ display: "flex", gap: 10 }}>
-          <button className="hudBtn" onClick={handleJoin}>
-            Join
-          </button>
-          <button className="hudBtn" onClick={() => setScreen("teamChoice")}>
-            Back
-          </button>
+        <div className="centerWrapScreen">
+          <div className="containerBox">
+            <h2>Join Party</h2>
+            <input
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value)}
+              placeholder="ABCDEF"
+              style={{
+                padding: 10,
+                fontSize: 16,
+                width: 260,
+                textTransform: "uppercase",
+              }}
+            />
+            <button className="hudBtn" onClick={handleJoin}>
+              Join
+            </button>
+            <button className="hudBtn" onClick={() => setScreen("teamChoice")}>
+              Back
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1008,36 +1015,31 @@ export default function App() {
       roomData?.hostUid && auth.currentUser?.uid === roomData.hostUid;
 
     return (
-      <div className="minScreen whiteScreen" style={{ padding: 18 }}>
-        <h2>Waiting Room</h2>
-        <div style={{ marginBottom: 8 }}>
-          Room Code: <b style={{ letterSpacing: 2 }}>{roomCode}</b>
-        </div>
-        <div style={{ opacity: 0.8, marginBottom: 12 }}>
-          Players ({players.length}/5):
-        </div>
-        <ul>
-          {players.map((p, i) => (
-            <li key={i}>
-              {p.name}
-              {p.finished ? " ✅" : ""}
-            </li>
-          ))}
-        </ul>
-
-        <div
-          style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}
-        >
-          {isHost ? (
-            <button className="hudBtn" onClick={handleHostStart}>
-              Start Game
+      <div className="minScreen WhiteScreen" style={{ padding: 18 }}>
+        <div className="centerWrapScreen">
+          <div className="containerBox">
+            <h2>Lobby</h2>
+            Room Code: <b style={{ letterSpacing: 2 }}>{roomCode}</b>
+            Players ({players.length}/5):
+            <ul>
+              {players.map((p, i) => (
+                <li key={i}>
+                  {p.name}
+                  {p.finished ? " ✅" : ""}
+                </li>
+              ))}
+            </ul>
+            {isHost ? (
+              <button className="hudBtn" onClick={handleHostStart}>
+                Start Game
+              </button>
+            ) : (
+              <div style={{ opacity: 0.8 }}>Waiting for host to start…</div>
+            )}
+            <button className="hudBtn" onClick={handleBackHome}>
+              Leave
             </button>
-          ) : (
-            <div style={{ opacity: 0.8 }}>Waiting for host to start…</div>
-          )}
-          <button className="hudBtn" onClick={handleBackHome}>
-            Leave
-          </button>
+          </div>
         </div>
       </div>
     );
@@ -1174,7 +1176,7 @@ export default function App() {
           )}
         </div>
 
-        <button className="hudBtn" onClick={handleBackHome}>
+        <button className="homeBtn" onClick={handleBackHome}>
           Home
         </button>
       </div>
