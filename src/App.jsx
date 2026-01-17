@@ -24,7 +24,7 @@ import { auth, db } from "./firebase";
 
 
 // --- Game constants ---
-const TOTAL_ROUNDS_DEFAULT = 50;
+const TOTAL_ROUNDS_DEFAULT = 20;
 const MIRROR = true;
 
 const GESTURE_TARGETS = [
