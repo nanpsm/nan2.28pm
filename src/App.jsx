@@ -5,23 +5,24 @@ import "./styles.css";
 
 // --- Firebase (ALL in this file) ---
 import {
+  getAuth,
   signInAnonymously,
+  updateProfile,
   onAuthStateChanged,
-  setPersistence,
-  inMemoryPersistence,
 } from "firebase/auth";
-
 import {
+  getDatabase,
   ref,
   get,
   set,
   update,
   onValue,
+  runTransaction,
   serverTimestamp,
-  onDisconnect,
 } from "firebase/database";
-
 import { auth, db } from "./firebase";
+import { setPersistence, inMemoryPersistence } from "firebase/auth";
+import { onDisconnect } from "firebase/database";
 
 // --- Game constants ---
 const TOTAL_ROUNDS_DEFAULT = 20;
@@ -60,7 +61,7 @@ function formatMs(ms) {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   const msLeft = total % 1000;
-  return `${m}:${String(s).padStart(2, "0")}.${String(msLeft).padStart(3, "0")}`;
+  return ${m}:${String(s).padStart(2, "0")}.${String(msLeft).padStart(3, "0")};
 }
 
 // ---------- Deterministic RNG for TEAM mode (same targets for everyone) ----------
@@ -123,15 +124,13 @@ function makeRoomCode(len = 6) {
   return out;
 }
 
-async function createRoom(roundCount = TOTAL_ROUNDS_DEFAULT, playerName = "Host") {
+async function createRoom(roundCount = TOTAL_ROUNDS_DEFAULT) {
   const user = auth.currentUser;
   if (!user) throw new Error("Not signed in");
 
-  const safeName = (playerName || "").trim() || "Host";
-
   for (let tries = 0; tries < 5; tries++) {
     const code = makeRoomCode(6);
-    const roomRef = ref(db, `rooms/${code}`);
+    const roomRef = ref(db, rooms/${code});
 
     const snap = await get(roomRef);
     if (snap.exists()) continue;
@@ -149,7 +148,7 @@ async function createRoom(roundCount = TOTAL_ROUNDS_DEFAULT, playerName = "Host"
       startedAt: null,
       players: {
         [user.uid]: {
-          name: safeName,
+          name: user.displayName || "Host",
           joinedAt: serverTimestamp(),
           finished: false,
           totalTimeMs: null,
@@ -157,23 +156,19 @@ async function createRoom(roundCount = TOTAL_ROUNDS_DEFAULT, playerName = "Host"
       },
     });
 
-    // onDisconnect cleanup (FIXED uid)
-    onDisconnect(ref(db, `rooms/${code}/players/${user.uid}`)).remove();
-    onDisconnect(ref(db, `rooms/${code}/results/${user.uid}`)).remove();
+  onDisconnect(ref(db, rooms/${code}/players/${uid})).remove();
+  onDisconnect(ref(db, rooms/${code}/results/${uid})).remove();
 
     return code;
   }
   throw new Error("Failed to create room. Try again.");
 }
 
-
-async function joinRoom(code, playerName = "Player") {
+async function joinRoom(code) {
   const user = auth.currentUser;
   if (!user) throw new Error("Not signed in");
 
-  const safeName = (playerName || "").trim() || "Player";
-
-  const roomRef = ref(db, `rooms/${code}`);
+  const roomRef = ref(db, rooms/${code});
   const roomSnap = await get(roomRef);
   if (!roomSnap.exists()) throw new Error("Room not found");
 
@@ -181,15 +176,10 @@ async function joinRoom(code, playerName = "Player") {
   if (room.status !== "lobby") throw new Error("Game already started");
 
   // rejoin without consuming slot
-  if (room.players && room.players[user.uid]) {
-    // still register cleanup
-    onDisconnect(ref(db, `rooms/${code}/players/${user.uid}`)).remove();
-    onDisconnect(ref(db, `rooms/${code}/results/${user.uid}`)).remove();
-    return true;
-  }
+  if (room.players && room.players[user.uid]) return true;
 
   // max 5 enforcement
-  const countRef = ref(db, `rooms/${code}/playerCount`);
+  const countRef = ref(db, rooms/${code}/playerCount);
   const tx = await runTransaction(countRef, (cur) => {
     const n = typeof cur === "number" ? cur : 0;
     if (n >= 5) return; // abort
@@ -197,15 +187,15 @@ async function joinRoom(code, playerName = "Player") {
   });
   if (!tx.committed) throw new Error("Room full (max 5)");
 
-  await update(ref(db, `rooms/${code}/players/${user.uid}`), {
-    name: safeName,
+  await update(ref(db, rooms/${code}/players/${user.uid}), {
+    name: name.trim() || "Player",
     joinedAt: serverTimestamp(),
     finished: false,
     totalTimeMs: null,
   });
 
-  onDisconnect(ref(db, `rooms/${code}/players/${user.uid}`)).remove();
-  onDisconnect(ref(db, `rooms/${code}/results/${user.uid}`)).remove();
+  onDisconnect(ref(db, rooms/${code}/players/${uid})).remove();
+  onDisconnect(ref(db, rooms/${code}/results/${uid})).remove();
 
   return true;
 }
@@ -214,7 +204,7 @@ async function startGame(code) {
   const user = auth.currentUser;
   if (!user) throw new Error("Not signed in");
 
-  const roomRef = ref(db, `rooms/${code}`);
+  const roomRef = ref(db, rooms/${code});
   const snap = await get(roomRef);
   if (!snap.exists()) throw new Error("Room not found");
 
@@ -231,15 +221,15 @@ async function submitResult(code, totalTimeMs) {
 
   const ms = Math.max(0, Math.floor(totalTimeMs));
   const updates = {};
-  updates[`rooms/${code}/players/${user.uid}/finished`] = true;
-  updates[`rooms/${code}/players/${user.uid}/totalTimeMs`] = ms;
-  updates[`rooms/${code}/results/${user.uid}`] = ms;
+  updates[rooms/${code}/players/${user.uid}/finished] = true;
+  updates[rooms/${code}/players/${user.uid}/totalTimeMs] = ms;
+  updates[rooms/${code}/results/${user.uid}] = ms;
 
   await update(ref(db), updates);
 }
 
 function listenRoom(code, cb) {
-  const roomRef = ref(db, `rooms/${code}`);
+  const roomRef = ref(db, rooms/${code});
   return onValue(roomRef, (snap) => cb(snap.val()));
 }
 
@@ -249,18 +239,16 @@ export default function App() {
   setPersistence(auth, inMemoryPersistence).catch(console.error);
   }, []);
 
+  // Screens: "name" | "mode" | "teamChoice" | "join" | "lobby" | "game" | "results"
   const [screen, setScreen] = useState("name");
   const [name, setName] = useState("");
   const [authUser, setAuthUser] = useState(null);
 
-  const [mode, setMode] = useState(null); 
+  const [mode, setMode] = useState(null); // "solo" | "team"
   const [roomCode, setRoomCode] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [roomData, setRoomData] = useState(null);
   const unsubRef = useRef(null);
-
-  const [roundsChoice, setRoundsChoice] = useState(20);
-  const [showSettings, setShowSettings] = useState(false);
 
   // TEAM game settings from room
   const [roundSeed, setRoundSeed] = useState(null);
@@ -430,7 +418,7 @@ export default function App() {
     if (!videoRef.current) return;
 
     const hands = new Hands({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+      locateFile: (file) => https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file},
     });
 
     hands.setOptions({
@@ -532,6 +520,7 @@ export default function App() {
         setRoundSeed(data.roundSeed);
         setTotalRounds(data.roundCount || TOTAL_ROUNDS_DEFAULT);
 
+        resetGame({ seed: data.roundSeed, rounds: data.roundCount || TOTAL_ROUNDS_DEFAULT });
         setScreen("game");
       }
 
@@ -543,6 +532,23 @@ export default function App() {
       if (unsubRef.current) unsubRef.current();
     };
   }, []);
+
+  // Reset game function
+  function resetGame({ seed = null, rounds = TOTAL_ROUNDS_DEFAULT } = {}) {
+    setFinished(false);
+    setTotalRounds(rounds);
+    setRound(1);
+
+    const next = seed != null ? pickTargetForRound({ seed, roundIndex: 1 }) : getNextTarget(1);
+    setTarget(next);
+    if (next.type === "MOUSE") setMousePos(seed != null ? getMousePosForTarget(1) : getMousePosForTarget(1));
+
+    setTimeText("0:00.000");
+    startedRef.current = false;
+    totalMsRef.current = 0;
+    roundStartRef.current = 0;
+    matchStableCountRef.current = 0;
+  }
 
   // ----- UI actions -----
   async function handleNameContinue() {
@@ -559,9 +565,8 @@ export default function App() {
     setRoomCode("");
     setRoomData(null);
     setRoundSeed(null);
-
-    setTotalRounds(roundsChoice);
-    resetGame({ seed: null, rounds: roundsChoice });
+    setTotalRounds(TOTAL_ROUNDS_DEFAULT);
+    resetGame({ seed: null, rounds: TOTAL_ROUNDS_DEFAULT });
     setScreen("game");
   }
 
@@ -572,7 +577,7 @@ export default function App() {
 
   async function handleHostCreate() {
     try {
-      const code = await createRoom(roundsChoice, name);
+      const code = await createRoom(TOTAL_ROUNDS_DEFAULT);
       setRoomCode(code);
       startListening(code);
       setScreen("lobby");
@@ -585,7 +590,7 @@ export default function App() {
     try {
       const code = joinCode.trim().toUpperCase();
       if (!code) return alert("Enter room code");
-      await joinRoom(code, name);
+      await joinRoom(code);
       setRoomCode(code);
       startListening(code);
       setScreen("lobby");
@@ -614,6 +619,7 @@ export default function App() {
     setScreen("mode");
   }
 
+  // ----- Leaderboard building -----
   function buildLeaderboard() {
     const results = roomData?.results || {};
     const players = roomData?.players || {};
@@ -626,15 +632,16 @@ export default function App() {
     return rows;
   }
 
+  // ----- Screens -----
   if (screen === "name") {
     return (
       <div className="minScreen" style={{ padding: 18 }}>
-        <h2>Oops! Too Slow</h2>
-        <p>Enter your nickname:</p>
+        <h2>Oops Too Slow</h2>
+        <p>Enter your name (that’s all you need):</p>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Your nickname"
+          placeholder="Your name"
           style={{ padding: 10, fontSize: 16, width: 260 }}
         />
         <div style={{ height: 10 }} />
@@ -650,61 +657,13 @@ export default function App() {
 
   if (screen === "mode") {
     return (
-      <div className="minScreen" style={{ padding: 18, position: "relative" }}>
-        <h2>Hi, {name || "Player"} 👋</h2>
+      <div className="minScreen" style={{ padding: 18 }}>
+        <h2>Hi, {authUser?.displayName || name || "Player"} 👋</h2>
         <p>Choose a mode:</p>
         <div style={{ display: "flex", gap: 10 }}>
           <button className="hudBtn" onClick={goSolo}>Solo Mode</button>
           <button className="hudBtn" onClick={goTeam}>Team Mode</button>
         </div>
-        <button
-          onClick={() => setShowSettings((v) => !v)}
-          style={{
-            position: "absolute",
-            top: 12,
-            right: 12,
-            border: "none",
-            background: "transparent",
-            fontSize: 20,
-            cursor: "pointer",
-          }}
-          aria-label="Settings"
-        >
-          ⚙️
-        </button>
-
-        {showSettings && (
-          <div
-            style={{
-              position: "absolute",
-              top: 44,
-              right: 12,
-              padding: 12,
-              borderRadius: 12,
-              background: "rgba(0,0,0,0.85)",
-              color: "white",
-              width: 220,
-            }}
-          >
-          <div style={{ marginBottom: 10, fontWeight: 700, fontSize: 18 }}>
-            Game Rounds
-          </div>
-
-          <input
-            type="range"
-            min={10}
-            max={50}
-            step={10}
-            value={roundsChoice}
-            onChange={(e) => setRoundsChoice(Number(e.target.value))}
-            style={{ width: "100%" }}
-          />
-
-          <div style={{ marginTop: 10 }}>
-            <b>{roundsChoice}</b> Rounds
-          </div>
-      </div>
-    )}
       </div>
     );
   }
@@ -722,7 +681,7 @@ export default function App() {
           Party limit: <b>5 players</b>
         </p>
       </div>
-    )
+    );
   }
 
   if (screen === "join") {
@@ -835,6 +794,16 @@ export default function App() {
   // Note: in TEAM mode, seed/roundCount is controlled by host start.
   const TOTAL_ROUNDS = totalRounds;
 
+  const reset = () => {
+    if (mode === "team") {
+      // For team, don’t let people desync by random reset during a match.
+      // Just reset locally to round 1 with same seed.
+      resetGame({ seed: roundSeed, rounds: TOTAL_ROUNDS });
+    } else {
+      resetGame({ seed: null, rounds: TOTAL_ROUNDS_DEFAULT });
+    }
+  };
+
   return (
     <div className="minScreen">
       <div className="hud">
@@ -845,7 +814,7 @@ export default function App() {
           ) : null}
           ROUND: <b>{round}/{TOTAL_ROUNDS}</b> | TIME: <b>{timeText}</b>
         </div>
-        <button className="hudBtn" onClick={handleBackHome}>Home</button>
+        <button className="hudBtn" onClick={reset}>Reset</button>
       </div>
 
       {/* input only (hidden) */}
@@ -862,7 +831,7 @@ export default function App() {
         {target.type === "MOUSE" && (
           <button
             className="mouseTarget"
-            style={{ left: `${mousePos.x}%`, top: `${mousePos.y}%` }}
+            style={{ left: ${mousePos.x}%, top: ${mousePos.y}% }}
             onClick={onMouseTargetClick}
             aria-label="Click target"
           />
