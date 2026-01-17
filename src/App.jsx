@@ -260,6 +260,8 @@ export default function App() {
   const totalMsRef = useRef(0);
   const roundStartRef = useRef(0);
   const startedRef = useRef(false);
+  const lastRoomStatusRef = useRef(null);
+  const startedAtRef = useRef(null); // prevents reset on every update
   const [timeText, setTimeText] = useState("0:00.000");
 
   // Avoid stale state inside handlers
@@ -496,15 +498,26 @@ export default function App() {
       setRoomData(data || null);
 
       // when host starts
-      if (data?.status === "playing") {
+      const newStatus = data?.status || null;
+      const prevStatus = lastRoomStatusRef.current;
+      lastRoomStatusRef.current = newStatus;
+
+      // ONLY start/reset when it just changed to "playing"
+      const justStarted =
+        newStatus === "playing" &&
+        (prevStatus !== "playing" || startedAtRef.current !== data?.startedAt);
+
+      if (justStarted && screen !== "results") {
+        startedAtRef.current = data?.startedAt || null;
+
         setMode("team");
         setRoundSeed(data.roundSeed);
         setTotalRounds(data.roundCount || TOTAL_ROUNDS_DEFAULT);
 
-        // reset game for team start
         resetGame({ seed: data.roundSeed, rounds: data.roundCount || TOTAL_ROUNDS_DEFAULT });
         setScreen("game");
       }
+
     });
   }
 
