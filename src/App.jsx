@@ -4,7 +4,6 @@ import { Camera } from "@mediapipe/camera_utils";
 import confetti from "canvas-confetti";
 import "./styles.css";
 
-// --- Firebase (ALL in this file) ---
 import {
   signInAnonymously,
   onAuthStateChanged,
@@ -25,7 +24,6 @@ import {
 
 import { auth, db } from "./firebase";
 
-// --- Game constants ---
 const TOTAL_ROUNDS_DEFAULT = 20;
 const MIRROR = true;
 
@@ -161,7 +159,6 @@ function formatMs(ms) {
   return `${m}:${String(s).padStart(2, "0")}.${String(msLeft).padStart(2, "0")}`;
 }
 
-// ---------- Deterministic RNG for TEAM mode (same targets for everyone) ----------
 function mulberry32(seed) {
   let t = seed >>> 0;
   return function () {
@@ -187,7 +184,6 @@ function generateKeyTargetFromRng(rng) {
 }
 
 function mousePosFromRng(rng) {
-  // avoid bottom-right camera preview zone (same style as yours)
   const x = 10 + rng() * 60;
   const y = 15 + rng() * 55;
   return { x, y };
@@ -210,7 +206,6 @@ function pickTargetForRound({ seed, roundIndex, totalRounds }) {
   return { type: "MOUSE", display: "🎯", label: "CLICK THE TARGET" };
 }
 
-// ---------- Firebase helpers (still in same file) ----------
 async function signInWithName(name) {
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Please enter a name");
@@ -264,7 +259,6 @@ async function createRoom(
       },
     });
 
-    // onDisconnect cleanup (FIXED uid)
     onDisconnect(ref(db, `rooms/${code}/players/${user.uid}`)).remove();
     onDisconnect(ref(db, `rooms/${code}/results/${user.uid}`)).remove();
 
@@ -286,19 +280,16 @@ async function joinRoom(code, playerName = "Player") {
   const room = roomSnap.val();
   if (room.status !== "lobby") throw new Error("Game already started");
 
-  // rejoin without consuming slot
   if (room.players && room.players[user.uid]) {
-    // still register cleanup
     onDisconnect(ref(db, `rooms/${code}/players/${user.uid}`)).remove();
     onDisconnect(ref(db, `rooms/${code}/results/${user.uid}`)).remove();
     return true;
   }
 
-  // max 5 enforcement
   const countRef = ref(db, `rooms/${code}/playerCount`);
   const tx = await runTransaction(countRef, (cur) => {
     const n = typeof cur === "number" ? cur : 0;
-    if (n >= 5) return; // abort
+    if (n >= 5) return;
     return n + 1;
   });
   if (!tx.committed) throw new Error("Room full (max 5)");
@@ -349,7 +340,6 @@ function listenRoom(code, cb) {
   return onValue(roomRef, (snap) => cb(snap.val()));
 }
 
-// -------------------- APP --------------------
 export default function App() {
   useEffect(() => {
     setPersistence(auth, inMemoryPersistence).catch(console.error);
@@ -368,11 +358,9 @@ export default function App() {
   const [roundsChoice, setRoundsChoice] = useState(20);
   const [showSettings, setShowSettings] = useState(false);
 
-  // TEAM game settings from room
   const [roundSeed, setRoundSeed] = useState(null);
   const [totalRounds, setTotalRounds] = useState(TOTAL_ROUNDS_DEFAULT);
 
-  // --- Your existing refs ---
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const cameraRef = useRef(null);
@@ -383,17 +371,16 @@ export default function App() {
   const [round, setRound] = useState(1);
   const [target, setTarget] = useState(() =>
     pickTargetForRound({ seed: 123, roundIndex: 1 }),
-  ); // will reset properly
+  ); 
   const [finished, setFinished] = useState(false);
 
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
 
-  // Total time (sum of per-round durations) — what you asked for
   const totalMsRef = useRef(0);
   const roundStartRef = useRef(0);
   const startedRef = useRef(false);
   const lastRoomStatusRef = useRef(null);
-  const startedAtRef = useRef(null); // prevents reset on every update
+  const startedAtRef = useRef(null); 
   const [timeText, setTimeText] = useState("0:00.000");
 
   const [floatItems, setFloatItems] = useState([]);
@@ -421,7 +408,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, [screen]);
 
-  // Avoid stale state inside handlers
   const targetRef = useRef(target);
   const roundRef = useRef(round);
   const finishedRef = useRef(finished);
@@ -430,22 +416,17 @@ export default function App() {
   useEffect(() => void (roundRef.current = round), [round]);
   useEffect(() => void (finishedRef.current = finished), [finished]);
 
-  // Stable-frame gate
   const matchStableCountRef = useRef(0);
   const STABLE_FRAMES = 3;
 
-  // Keep auth user state
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setAuthUser(u);
     });
     return () => unsub();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // --- Target generator wrapper (solo = random, team = deterministic) ---
   function getNextTarget(nextRound) {
-    // ✅ last round forced (solo + team)
     const isLast = nextRound === totalRounds;
 
     if (mode === "team" && roundSeed != null) {
@@ -456,7 +437,6 @@ export default function App() {
       });
     }
 
-    // SOLO
     if (isLast) {
       return BOTH_HAND_GESTURE_TARGETS[
         Math.floor(Math.random() * BOTH_HAND_GESTURE_TARGETS.length)
@@ -476,7 +456,6 @@ export default function App() {
       const rng = mulberry32((roundSeed ^ (nextRound * 97531)) >>> 0);
       return mousePosFromRng(rng);
     }
-    // SOLO random
     const x = 10 + Math.random() * 60;
     const y = 15 + Math.random() * 55;
     return { x, y };
@@ -488,7 +467,6 @@ export default function App() {
     return totalMsRef.current + (now - roundStartRef.current);
   };
 
-  // Complete round: add per-round time, advance, finish
   const completeRound = async () => {
     if (finishedRef.current) return;
 
@@ -498,12 +476,10 @@ export default function App() {
       roundStartRef.current = now;
       totalMsRef.current = 0;
     } else {
-      // close current round
       totalMsRef.current += now - roundStartRef.current;
       roundStartRef.current = now;
     }
 
-    // finish?
     if (roundRef.current >= totalRounds) {
       const finalMs = totalMsRef.current;
       setTimeText(formatMs(finalMs));
@@ -512,14 +488,13 @@ export default function App() {
       const shot = captureSelfie();
       if (shot) setSelfieUrl(shot);
 
-      // TEAM: submit result
       if (mode === "team" && roomCode) {
         try {
           await submitResult(roomCode, finalMs);
           setScreen("results");
         } catch (e) {
           console.error(e);
-          setScreen("results"); // still show results screen
+          setScreen("results");
         }
       } else {
         setScreen("results");
@@ -527,7 +502,6 @@ export default function App() {
       return;
     }
 
-    // next round
     setRound((r) => {
       const nextR = r + 1;
       const nextT = getNextTarget(nextR);
@@ -545,7 +519,6 @@ export default function App() {
     completeRound();
   };
 
-  // Live timer display
   useEffect(() => {
     let raf = 0;
     const tick = () => {
@@ -557,7 +530,6 @@ export default function App() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // Keyboard input
   useEffect(() => {
     const onKeyDown = (e) => {
       if (finishedRef.current) return;
@@ -578,7 +550,6 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [screen]);
 
-  // MediaPipe Hands + camera preview
   useEffect(() => {
     if (!videoRef.current) return;
 
@@ -597,7 +568,6 @@ export default function App() {
     hands.onResults((results) => {
       if (finishedRef.current) return;
 
-      // draw camera frame
       const canvas = canvasRef.current;
       if (canvas && results.image) {
         const ctx = canvas.getContext("2d");
@@ -669,18 +639,15 @@ export default function App() {
     };
   }, [screen]);
 
-  // TEAM: listen to room changes
   function startListening(code) {
     if (unsubRef.current) unsubRef.current();
     unsubRef.current = listenRoom(code, (data) => {
       setRoomData(data || null);
 
-      // when host starts
       const newStatus = data?.status || null;
       const prevStatus = lastRoomStatusRef.current;
       lastRoomStatusRef.current = newStatus;
 
-      // ONLY start/reset when it just changed to "playing"
       const justStarted =
         newStatus === "playing" &&
         (prevStatus !== "playing" || startedAtRef.current !== data?.startedAt);
@@ -710,7 +677,6 @@ export default function App() {
   useEffect(() => {
     if (screen !== "results") return;
 
-    // Big center burst
     confetti({
       particleCount: 120,
       spread: 90,
@@ -718,7 +684,6 @@ export default function App() {
       origin: { x: 0.5, y: 0.45 },
     });
 
-    // Falling paper-pollen effect
     const duration = 1600;
     const end = Date.now() + duration;
 
@@ -739,7 +704,6 @@ export default function App() {
     frame();
   }, [screen]);
 
-  // Reset game function
   function resetGame({ seed = null, rounds = TOTAL_ROUNDS_DEFAULT } = {}) {
     setFinished(false);
     setTotalRounds(rounds);
@@ -762,7 +726,6 @@ export default function App() {
     matchStableCountRef.current = 0;
   }
 
-  // ----- UI actions -----
   async function handleNameContinue() {
     try {
       await signInWithName(name);
@@ -1078,7 +1041,6 @@ export default function App() {
 
     return (
       <div className="minScreen" style={{ padding: 24 }}>
-        {/* ===== WINNER (big center) ===== */}
         {isTeam && winner && (
           <div style={{ textAlign: "center", marginBottom: 24 }}>
             <div style={{ fontSize: 40, fontWeight: 900, marginTop: 6 }}>
@@ -1090,7 +1052,6 @@ export default function App() {
           </div>
         )}
 
-        {/* ===== LEADERBOARD ===== */}
         {isTeam && (
           <div style={{ maxWidth: 520, margin: "0 auto 28px" }}>
             <div style={{ fontWeight: 800, marginBottom: 10 }}>Ranking</div>
@@ -1114,15 +1075,12 @@ export default function App() {
           </div>
         )}
 
-        {/* ===== YOUR RECORD ===== */}
-
         <div className="centerWrapScreen">
           <div className="containerBox">
             <div style={{ fontWeight: 900 }}>
               Your record : {myTimeText}
               </div>
 
-          {/* selfie + download (your existing working block) */}
           {selfieUrl && (
             <div style={{ marginTop: 12 }}>
               <img
@@ -1147,7 +1105,6 @@ export default function App() {
             </div>
           )}
 
-          {/* buttons */}
             {mode === "team" && (
               <button className="hudBtn" onClick={() => setScreen("lobby")}>
                 Back to Lobby
@@ -1162,8 +1119,6 @@ export default function App() {
     );
   } 
 
-  // -------------- GAME SCREEN (your original UI, slightly adjusted) --------------
-  // Note: in TEAM mode, seed/roundCount is controlled by host start.
   const TOTAL_ROUNDS = totalRounds;
 
   return (
@@ -1192,7 +1147,6 @@ export default function App() {
         </button>
       </div>
 
-      {/* input only (hidden) */}
       <video
         ref={videoRef}
         className="hiddenVideo"
@@ -1219,13 +1173,11 @@ export default function App() {
         )}
       </div>
 
-      {/* camera preview */}
       <canvas ref={canvasRef} className="cameraPreview" />
     </div>
   );
 }
 
-// Gesture classifier (unchanged)
 function classifyGesture(lm) {
   if (!lm) return null;
 

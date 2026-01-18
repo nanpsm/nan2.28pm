@@ -1,4 +1,3 @@
-// src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously, updateProfile } from "firebase/auth";
 import {
@@ -13,7 +12,6 @@ import {
 } from "firebase/database";
 
 
-// 1) Firebase config (yours)
 const firebaseConfig = {
   apiKey: "AIzaSyBAe7YjawmZEk8t1HLeAt6DZoB2DRwv7-w",
   authDomain: "oops-too-slow.firebaseapp.com",
@@ -24,12 +22,10 @@ const firebaseConfig = {
   appId: "1:120862424624:web:0692b1cea858ae65ed37f5",
 };
 
-// 2) Init
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getDatabase(app);
 
-// ---------- helpers (kept in same file) ----------
 
 export async function signInWithName(name) {
   const trimmed = name.trim();
@@ -80,7 +76,6 @@ async function createRoom(roundCount = TOTAL_ROUNDS_DEFAULT, playerName = "Host"
       },
     });
 
-    // onDisconnect cleanup (FIXED uid)
     onDisconnect(ref(db, `rooms/${code}/players/${user.uid}`)).remove();
     onDisconnect(ref(db, `rooms/${code}/results/${user.uid}`)).remove();
 
@@ -103,9 +98,7 @@ async function joinRoom(code, playerName = "Player") {
   const room = roomSnap.val();
   if (room.status !== "lobby") throw new Error("Game already started");
 
-  // rejoin without consuming slot
   if (room.players && room.players[user.uid]) {
-    // still register cleanup
     onDisconnect(ref(db, `rooms/${code}/players/${user.uid}`)).remove();
     onDisconnect(ref(db, `rooms/${code}/results/${user.uid}`)).remove();
     return true;
@@ -115,7 +108,7 @@ async function joinRoom(code, playerName = "Player") {
   const countRef = ref(db, `rooms/${code}/playerCount`);
   const tx = await runTransaction(countRef, (cur) => {
     const n = typeof cur === "number" ? cur : 0;
-    if (n >= 5) return; // abort
+    if (n >= 5) return; 
     return n + 1;
   });
   if (!tx.committed) throw new Error("Room full (max 5)");

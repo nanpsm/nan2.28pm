@@ -72,7 +72,7 @@ button.ghost { background: transparent; }
 .hint { margin-top: 14px; font-size: 13px; opacity: 0.75; }
 
 .camTitle { margin-bottom: 10px; opacity: 0.9; }
-.video { display: none; } /* we show canvas instead */
+.video { display: none; }
 .canvas {
   width: 100%;
   max-width: 720px;
@@ -112,7 +112,6 @@ button.ghost { background: transparent; }
   font-size: 14px;
 }
 
-/* LEFT */
 .hudLeft {
   justify-self: start;
   white-space: nowrap;
@@ -122,14 +121,12 @@ button.ghost { background: transparent; }
   justify-self: end;
 }
 
-/* CENTER */
 .hudCenter {
   justify-self: center;
   text-align: center;
   white-space: nowrap;
 }
 
-/* RIGHT */
 .hudBtn {
   width: 200px;
   background: #e5e4e2;
@@ -157,8 +154,6 @@ button.ghost { background: transparent; }
   margin-bottom: 12px;
   color: #ffffff;
 
-
-  /* 🔵 40% faded blue neon (letters) */
   text-shadow:
     0 0 4px rgba(60, 100, 255, 0.45),
     0 0 12px rgba(60, 100, 255, 0.45),
@@ -166,7 +161,6 @@ button.ghost { background: transparent; }
     0 0 40px rgba(60, 100, 255, 0.18);
 
 
-  /* 🔵 40% faded glow (emojis) */
   filter:
     drop-shadow(0 0 6px rgba(60, 100, 255, 0.45))
     drop-shadow(0 0 14px rgba(60, 100, 255, 0.30))
@@ -180,8 +174,6 @@ button.ghost { background: transparent; }
   justify-content: center;
 }
 
-
-
 .subtitle {
   text-align: center;
   font-size: 16px;
@@ -191,7 +183,6 @@ button.ghost { background: transparent; }
 }
 
 
-/* Aimlab target */
 .mouseTarget{
   position:absolute;
   width:60px;
@@ -209,7 +200,6 @@ button.ghost { background: transparent; }
   display: inline-block;
 }
 
-/* optional: a dot in the center */
 .mouseTarget::after{
   content:"";
   position:absolute;
@@ -226,7 +216,7 @@ button.ghost { background: transparent; }
   right: 14px;
   bottom: 14px;
 
-  width: 140px;          /* ⬅️ smaller */
+  width: 140px;          
   aspect-ratio: 4 / 3;
 
   border-radius: 12px;
@@ -239,7 +229,6 @@ button.ghost { background: transparent; }
   transform: scaleX(-1); /* mirror camera */
 }
 
-/* -------- NAME SCREEN -------- */
 
 .nameScreen {
   min-height: 100vh;
@@ -250,7 +239,7 @@ button.ghost { background: transparent; }
 }
 
 .nameCard{
-  width: min(1000px, 92vw); /* match your rectangle width */
+  width: min(1000px, 92vw); 
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -258,7 +247,7 @@ button.ghost { background: transparent; }
   
 }
 
-/* TITLE */
+
 .title {
   font-size: 48px;
   font-weight: 700;
@@ -312,8 +301,8 @@ button.ghost { background: transparent; }
   height: 300px;
   margin: 14px auto 18px;
   background: #fff;
-  position: relative;   /* IMPORTANT */
-  overflow: hidden;     /* IMPORTANT */
+  position: relative;   
+  overflow: hidden;     
   border-radius: 24px;
   box-shadow: 
     0 10px 30px rgba(0,0,0,0.12);
@@ -328,7 +317,7 @@ button.ghost { background: transparent; }
   line-height: 1;
   pointer-events: none;
 
-  animation: rise 4s ease-out forwards; /* IMPORTANT */
+  animation: rise 4s ease-out forwards; 
 }
 
 @keyframes rise{
@@ -337,16 +326,14 @@ button.ghost { background: transparent; }
   100%{ transform: translate(var(--drift), -350px); opacity: 0; }
 }
 
-/* Wrapper to position title relative to rectangle */
 .floatRectWrapper{
   position: relative;
   width: 100%;
 }
 
-/* Title inside rectangle */
 .rectTitle{
   position: absolute;
-  top: 35%;                 /* overlaps rectangle slightly */
+  top: 35%;                 
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
@@ -354,7 +341,7 @@ button.ghost { background: transparent; }
   padding: 10px 22px;
   border-radius: 14px;
 
-  background: rgba(255,255,255,0.5); /* 50% transparent */
+  background: rgba(255,255,255,0.5); 
   color: #000;
 
   font-size: 48px;
@@ -369,8 +356,8 @@ button.ghost { background: transparent; }
 .centerWrapScreen {
   flex: 1;
   display: flex;
-  align-items: center;      /* vertical center */
-  justify-content: center;  /* horizontal center */
+  align-items: center;      
+  justify-content: center;  
 }
 
 .containerBox {
